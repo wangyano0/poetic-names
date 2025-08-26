@@ -1,0 +1,240 @@
+/* ========================
+   通用 & 基础样式
+   ========================= */
+   :root {
+    --bg-color: #fdfdfc;
+    --text-color: #333;
+    --primary-color: #8c735b; /* 一个沉稳的棕色调 */
+    --card-bg: #ffffff;
+    --border-color: #eee;
+    --font-en: 'Playfair Display', serif;
+    --font-cn: 'Noto Serif SC', serif;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-en), var(--font-cn), sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+    font-weight: 700;
+}
+
+h2 {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    color: #5c4d3e;
+}
+
+section {
+    padding: 4rem 2rem;
+}
+
+/* ========================
+   1. 首页首屏 (Hero Section)
+   ========================= */
+#hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    background: url('https://images.unsplash.com/photo-1517167685284-96a27671ad_a?ixlib=rb-4.0.3&q=80&w=1800') no-repeat center center/cover;
+    color: white;
+    padding: 2rem;
+}
+#hero::before { /* 添加遮罩层让文字更清晰 */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+}
+
+#hero h1 {
+    font-size: 2.8rem;
+    font-family: var(--font-cn), var(--font-en);
+    margin-bottom: 0.5rem;
+}
+
+#hero .subtitle {
+    font-size: 1.4rem;
+    font-family: var(--font-en);
+    font-style: italic;
+    opacity: 0.9;
+    margin-bottom: 2.5rem;
+}
+
+.naming-tool input[type="text"] {
+    width: 80%;
+    max-width: 400px;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border: 1px solid #fff;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+.naming-tool input[type="text"]::placeholder { color: #ddd; }
+
+.source-selection {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.source-option input[type="radio"] { display: none; }
+.source-option label {
+    display: block;
+    padding: 0.7rem 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.source-option .en-desc { display: none; } /* 默认隐藏英文描述 */
+.source-option label:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.source-option input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.naming-tool button {
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-family: var(--font-cn), var(--font-en);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.naming-tool button:hover { background-color: #a18871; }
+
+
+/* ========================
+   2. 名字卡片展示区
+   ========================= */
+#showcase { background-color: #faf8f5; }
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.name-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.name-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+.name-card h3 {
+    font-size: 2rem;
+    font-family: var(--font-cn);
+    margin-top: 0;
+    color: var(--primary-color);
+}
+.name-card .pinyin { font-family: var(--font-en); font-size: 1.2rem; font-weight: 400; color: #999; }
+.name-card .meaning, .name-card .source { font-style: italic; color: #666; }
+.quote {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+.quote .cn { font-family: var(--font-cn); font-size: 1.1rem; }
+.quote .en { font-family: var(--font-en); font-size: 1rem; color: #777; font-style: italic; }
+
+
+/* ========================
+   3. 典籍探索区
+   ========================= */
+.explore-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.explore-item { text-align: center; }
+.explore-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    filter: saturate(0.8);
+    transition: filter 0.3s ease;
+}
+.explore-item:hover img { filter: saturate(1); }
+.explore-item h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+
+/* ========================
+   4. 理念区
+   ========================= */
+#philosophy { background-color: #faf8f5; }
+.philosophy-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+.philosophy-item i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+.philosophy-item h4 { font-size: 1.3rem; }
+
+
+/* ========================
+   5. 页脚
+   ========================= */
+footer {
+    text-align: center;
+    padding: 2rem;
+    background-color: #333;
+    color: #ccc;
+}
+footer a { color: #fff; text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ========================
+   响应式设计
+   ========================= */
+@media (max-width: 768px) {
+    h1 { font-size: 2.2rem; }
+    h2 { font-size: 1.8rem; }
+    section { padding: 3rem 1rem; }
+    
+    .source-selection { flex-direction: column; align-items: center; }
+    .source-option { width: 80%; }
+    .source-option .en-desc { display: inline; font-size: 0.8rem; opacity: 0.8; } /* 在手机上显示英文 */
+}

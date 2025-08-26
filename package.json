@@ -1,0 +1,17 @@
+{
+  "name": "guchi-name",
+  "version": "0.1.0",
+  "private": true,
+  "description": "古诗文起名：基于诗经楚辞唐宋等生成名字，卡片化故事呈现",
+  "license": "MIT",
+  "dev": {
+    "sanitize": "node scripts/sanitize.js",
+    "import:sqlite": "node scripts/import_sqlite.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0",
+    "nodejieba": "^2.6.0"
+  }
+}
+
+

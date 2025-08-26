@@ -1,0 +1,89 @@
+import json
+import os
+import jieba
+
+# ======== 配置区 ========
+
+# 禁用字表（脏字/不适合名字的字）
+BLACKLIST_CHARS = set("屎尿丑病死鬼尸仇贱灾戚奴")  
+
+# 禁用词表（负面意义）
+BLACKLIST_WORDS = set(["孤苦", "寂灭", "凋零", "哀愁", "绝望", "寒苦"])
+
+# 优美字表（加分）
+GOOD_CHARS = set("清明嘉宁雅安乐远诗云月星竹松")  
+
+# ======== 工具函数 ========
+
+def is_valid_word(word: str) -> bool:
+    """判断是否是可用名字候选"""
+    if not (1 <= len(word) <= 2):  # 名字一般 1-2 字
+        return False
+    if any(ch in BLACKLIST_CHARS for ch in word):
+        return False
+    if word in BLACKLIST_WORDS:
+        return False
+    return True
+
+def score_word(word: str) -> int:
+    """根据美感简单打分"""
+    score = 0
+    for ch in word:
+        if ch in GOOD_CHARS:
+            score += 2
+    return score
+
+def extract_names_from_sentence(sentence, source_title):
+    """从一句诗中提取名字候选"""
+    words = jieba.lcut(sentence)
+    candidates = [w for w in words if is_valid_word(w)]
+    # 按打分排序
+    candidates = sorted(candidates, key=lambda w: score_word(w), reverse=True)
+    
+    results = []
+    for w in candidates[:3]:  # 每句诗最多取3个名字
+        results.append({
+            "name": w,
+            "source": source_title,
+            "verse": sentence,
+            "meaning": f"{w} —— 一个富有诗意的名字"  # 这里可以接字典做更详细释义
+        })
+    return results
+
+# ======== 主函数 ========
+
+def generate_names_from_json(json_path):
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    all_names = []
+    for poem in data:
+        title = poem.get("title", "未知来源")
+        content = poem.get("content", "")
+        if isinstance(content, list):
+            verses = content
+        else:
+            verses = content.split("。")
+
+        for verse in verses:
+            verse = verse.strip(" ，。！？；：\n\r")
+            if not verse:
+                continue
+            names = extract_names_from_sentence(verse, title)
+            all_names.extend(names)
+
+    return all_names
+
+# ======== 示例运行 ========
+
+if __name__ == "__main__":
+    # 假设你有一个文件 chuci.json
+    path = "chuci.json"  # 你本地的路径
+    
+    results = generate_names_from_json(path)
+
+    # 打印前10个结果
+    for r in results[:10]:
+        print(f"【名字】{r['name']}  —— 出自《{r['source']}》: {r['verse']}")
+        print(f"释义: {r['meaning']}")
+        print("-" * 40)
