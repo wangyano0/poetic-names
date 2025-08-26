@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 export const runtime = 'nodejs';
 import nodejieba from 'nodejieba';
+import chineseToPinyin from 'chinese-to-pinyin';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,6 +11,10 @@ type NameCard = {
   source: { title: string; author?: string; dynasty?: string; sourceSet: string };
   originalVerse: string;
   meaning: string;
+  // 新增：原文句子与英文
+  lineCn?: string;
+  lineEn?: string;
+  meaningEn?: string;
   createdAt: string;
 };
 
@@ -62,44 +67,24 @@ function isMeaningfulChar(char: string): boolean {
 
 // 拼音生成函数
 function generatePinyin(name: string): string {
-  // 简单的拼音映射表（常用汉字）
-  const pinyinMap: Record<string, string> = {
-    '王': 'Wáng', '李': 'Lǐ', '张': 'Zhāng', '刘': 'Liú', '陈': 'Chén', '杨': 'Yáng', '赵': 'Zhào', '黄': 'Huáng',
-    '周': 'Zhōu', '吴': 'Wú', '徐': 'Xú', '孙': 'Sūn', '胡': 'Hú', '朱': 'Zhū', '高': 'Gāo', '林': 'Lín',
-    '何': 'Hé', '郭': 'Guō', '马': 'Mǎ', '罗': 'Luó', '梁': 'Liáng', '宋': 'Sòng', '郑': 'Zhèng', '谢': 'Xiè',
-    '韩': 'Hán', '唐': 'Táng', '冯': 'Féng', '于': 'Yú', '董': 'Dǒng', '萧': 'Xiāo', '程': 'Chéng', '曹': 'Cáo',
-    '袁': 'Yuán', '邓': 'Dèng', '许': 'Xǔ', '傅': 'Fù', '沈': 'Shěn', '曾': 'Zēng', '彭': 'Péng', '吕': 'Lǚ',
-    '苏': 'Sū', '卢': 'Lú', '蒋': 'Jiāng', '蔡': 'Cài', '贾': 'Jiǎ', '丁': 'Dīng', '魏': 'Wèi', '薛': 'Xuē',
-    '叶': 'Yè', '阎': 'Yán', '余': 'Yú', '潘': 'Pān', '杜': 'Dù', '戴': 'Dài', '夏': 'Xià', '钟': 'Zhōng',
-    '汪': 'Wāng', '田': 'Tián', '任': 'Rèn', '姜': 'Jiāng', '范': 'Fàn', '方': 'Fāng', '石': 'Shí', '姚': 'Yáo',
-    '谭': 'Tán', '廖': 'Liào', '邹': 'Zōu', '熊': 'Xióng', '金': 'Jīn', '陆': 'Lù', '郝': 'Hǎo', '孔': 'Kǒng',
-    '白': 'Bái', '崔': 'Cuī', '康': 'Kāng', '毛': 'Máo', '邱': 'Qiū', '秦': 'Qín', '江': 'Jiāng', '史': 'Shǐ',
-    '顾': 'Gù', '侯': 'Hóu', '邵': 'Shào', '孟': 'Mèng', '龙': 'Lóng', '万': 'Wàn', '段': 'Duàn', '雷': 'Léi',
-    '钱': 'Qián', '汤': 'Tāng', '尹': 'Yǐn', '黎': 'Lí', '易': 'Yì', '常': 'Cháng', '武': 'Wǔ', '乔': 'Qiáo',
-    '贺': 'Hè', '赖': 'Lài', '龚': 'Gōng', '清': 'Qīng', '雅': 'Yǎ', '嘉': 'Jiā', '安': 'Ān',
-    '明': 'Míng', '乐': 'Lè', '宁': 'Níng', '远': 'Yuǎn', '诗': 'Shī', '云': 'Yún', '月': 'Yuè', '风': 'Fēng',
-    '花': 'Huā', '雪': 'Xuě', '雨': 'Yǔ', '山': 'Shān', '水': 'Shuǐ', '竹': 'Zhú', '松': 'Sōng',
-    '梅': 'Méi', '兰': 'Lán', '菊': 'Jú', '荷': 'Hé', '莲': 'Lián', '桂': 'Guì', '桃': 'Táo',
-    '杏': 'Xìng', '梨': 'Lí', '樱': 'Yīng', '枫': 'Fēng', '柳': 'Liǔ', '杨': 'Yáng', '柏': 'Bǎi', '槐': 'Huái',
-    '椿': 'Chūn', '楠': 'Nán', '梓': 'Zǐ', '桐': 'Tóng', '梧': 'Wú', '桑': 'Sāng', '榆': 'Yú', '美': 'Měi',
-    '丽': 'Lì', '秀': 'Xiù', '慧': 'Huì', '智': 'Zhì', '贤': 'Xián', '德': 'Dé', '仁': 'Rén', '义': 'Yì',
-    '礼': 'Lǐ', '信': 'Xìn', '温': 'Wēn', '柔': 'Róu', '婉': 'Wǎn', '约': 'Yuē', '静': 'Jìng', '淑': 'Shū',
-    '娴': 'Xián', '华': 'Huá', '英': 'Yīng', '俊': 'Jùn', '杰': 'Jié', '豪': 'Háo', '雄': 'Xióng', '伟': 'Wěi',
-    '壮': 'Zhuàng', '强': 'Qiáng', '健': 'Jiàn', '康': 'Kāng', '泰': 'Tài', '和': 'Hé', '平': 'Píng', '逸': 'Yì',
-    '文': 'Wén', '武': 'Wǔ', '才': 'Cái', '艺': 'Yì', '学': 'Xué', '识': 'Shí', '见': 'Jiàn', '闻': 'Wén',
-    '思': 'Sī', '想': 'Xiǎng', '迤': 'Yǐ', '其': 'Qí', '茹': 'Rú', '薰': 'Xūn', '迩': 'Ěr', '远': 'Yuǎn',
-    '居': 'Jū', '复': 'Fù', '蔽': 'Bì', '芾': 'Fèi', '樗': 'Chū', '婚': 'Hūn', '姻': 'Yīn', '故': 'Gù',
-    '言': 'Yán', '就': 'Jiù', '野': 'Yě', '行': 'Xíng', '邦': 'Bāng', '家': 'Jiā', '尔': 'Ěr', '牡': 'Mǔ',
-    '骙': 'Kuí', '狁': 'Yǔn', '炽': 'Chì', '栖': 'Qī', '戎': 'Róng', '车': 'Chē', '饬': 'Chì',
-    '服': 'Fú', '玁': 'Xiǎn', '用': 'Yòng', '急': 'Jí', '征': 'Zhēng', '匡': 'Kuāng', '国': 'Guó'
-  };
-  
-  // 将名字转换为拼音
-  const pinyinArray = name.split('').map(char => {
-    return pinyinMap[char] || char; // 如果没有找到拼音，返回原字符
-  });
-  
-  return pinyinArray.join(' ');
+  try {
+    // 使用chinese-to-pinyin库生成拼音
+    const pinyinResult = chineseToPinyin(name, {
+      removeTone: false, // 保留声调
+      removeSpace: false, // 保留空格
+      keepRest: true // 保留非中文字符
+    });
+    
+    // 将拼音字符串按空格分割，首字母大写
+    const pinyinArray = pinyinResult.split(' ');
+    return pinyinArray.map((py: string) => {
+      return py.charAt(0).toUpperCase() + py.slice(1);
+    }).join(' ');
+  } catch (error) {
+    console.error('拼音生成失败:', error);
+    // 回退到原字符
+    return name;
+  }
 }
 
 // 音律美感判断 - 简单的声调规则
@@ -210,8 +195,12 @@ function extractNames(text: string, maxLength: 1 | 2): string[] {
   return uniqueCandidates;
 }
 
-// 智能寓意生成系统 - 完全重写版本
-function generateMeaning(name: string, source: { title: string; author?: string; dynasty?: string; sourceSet: string }): string {
+// 智能寓意生成系统 - 根据字义/来源/诗句关键词动态组合
+function generateMeaning(
+  name: string,
+  source: { title: string; author?: string; dynasty?: string; sourceSet: string },
+  poemText?: string
+): string {
   // 扩展的字义词库 - 更丰富的文化内涵
   const meanings: Record<string, string[]> = {
     '清': ['清澈纯净', '清雅高洁', '清正廉洁', '清高自持'],
@@ -376,36 +365,61 @@ function generateMeaning(name: string, source: { title: string; author?: string;
   
   // 获取数据源风格
   const sourceStyle = sourceStyles[source.sourceSet] || sourceStyles['gushi'];
+
+  // 诗句关键词（用于无字义时的兜底与增强）
+  const poem = String(poemText || '');
+  let poemKeywords: string[] = [];
+  try {
+    if (poem) {
+      poemKeywords = nodejieba
+        .extract(poem.replace(/<[^>]+>/g, ''), 6)
+        .map((v: any) => v.word)
+        .filter((w: string) => /^[\u4e00-\u9fa5]{1,3}$/.test(w))
+        .slice(0, 3);
+    }
+  } catch {
+    poemKeywords = [];
+  }
   
-  // 寓意生成模板系统 - 完全重写，增加差异化
-  const meaningTemplates = [
+  // 寓意生成模板池：按随机选取；穿插来源风格/诗句关键词/字义
+  const connectors = ['蕴含', '寄托', '彰显', '融汇', '凝练', '映照', '传达'];
+  const pick = <T,>(arr: T[]) => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : undefined);
+  const kw = poemKeywords.length ? poemKeywords.join('、') : sourceStyle.keywords.join('、');
+  const c1 = pick(connectors) || '寄托';
+  const c2 = pick(connectors) || '蕴含';
+
+  const meaningTemplatesWithChars = [
     // 字义 + 文化象征
-    `'${name.split('').join('、')}'字分别寓意${charMeanings.join('、')}，${sourceStyle.style}风格，寄托${charMeanings[0]}之志。`,
+    `'${name.split('').join('、')}'字分别寓意${charMeanings.join('、')}，${sourceStyle.style}风格，${c1}${charMeanings[0]}之志。`,
     
     // 出处意境 + 字义
-    `源自${source.author || '佚名'}《${source.title}》，${sourceStyle.style}意境，名字体现${charMeanings.join('、')}，彰显文化底蕴。`,
+    `源自${source.author || '佚名'}《${source.title}》，${sourceStyle.style}意境，名字体现${charMeanings.join('、')}，${c2}文化底蕴。`,
     
     // 风格特征 + 字义组合
-    `取意${charMeanings.join('、')}，${sourceStyle.style}风格，融合了${sourceStyle.keywords[0]}与${sourceStyle.keywords[1]}的意境，寓意深远。`,
+    `取意${charMeanings.join('、')}，${sourceStyle.style}风格，融合了${pick(sourceStyle.keywords) || '风雅'}与${pick(sourceStyle.keywords) || '清新'}的意境，寓意深远。`,
     
     // 文化传承 + 个人特质
-    `名字${charMeanings.join('、')}，传承${sourceStyle.style}文化精髓，寄托${charMeanings[0]}与${charMeanings[1] || charMeanings[0]}的美好祝愿。`,
+    `名字${charMeanings.join('、')}，传承${sourceStyle.style}文化精髓，${c1}${charMeanings[0]}与${charMeanings[1] || charMeanings[0]}的美好祝愿。`,
     
     // 出处 + 风格 + 寓意
-    `来自《${source.title}》的${sourceStyle.style}风格，名字寓意${charMeanings.join('、')}，体现了深厚的文学底蕴。`,
+    `来自《${source.title}》的${sourceStyle.style}风格，名字寓意${charMeanings.join('、')}，体现深厚的文学底蕴。`,
     
     // 字义 + 风格 + 象征
-    `以${charMeanings.join('、')}为名，${sourceStyle.style}风格，象征${charMeanings[0]}，承载着美好的文化寓意。`
+    `以${charMeanings.join('、')}为名，${sourceStyle.style}风格，象征${charMeanings[0]}，承载美好的文化寓意。`,
+  ];
+
+  const meaningTemplatesNoChars = [
+    `取意于${source.author || '佚名'}《${source.title}》，${sourceStyle.style}之美，融入“${kw}”意象，展现独特气质。`,
+    `名字映照“${kw}”的意境，延续《${source.title}》的神韵，${sourceStyle.style}而不失新意。`,
+    `从《${source.title}》汲取“${kw}”之神采，寓意清新而悠远。`,
+    `承${sourceStyle.style}之韵，以“${kw}”为象，寄托美好祝愿。`,
+    `源自《${source.title}》，取“${kw}”之意象，寓意雅致而悠远。`
   ];
   
-  if (charMeanings.length > 0) {
-    // 随机选择一个模板，增加多样性
-    const randomTemplate = meaningTemplates[Math.floor(Math.random() * meaningTemplates.length)];
-    return randomTemplate;
-  } else {
-    // 如果没有找到字义，使用数据源风格生成
-    return `寓意美好，体现${sourceStyle.style}的中华文化底蕴，寄托美好祝愿。`;
-  }
+  // 随机模板，无论是否命中字义都可使用
+  const pool = charMeanings.length > 0 ? [...meaningTemplatesWithChars, ...meaningTemplatesNoChars] : meaningTemplatesNoChars;
+  const randomTemplate = pool[Math.floor(Math.random() * pool.length)];
+  return randomTemplate;
 }
 
 // 生成名字卡片
@@ -415,7 +429,7 @@ function toCard(name: string, row: Record<string, unknown>, sourceSet: string): 
     author: (row.author as string) || '佚名',
     dynasty: (row.dynasty as string) || '未知',
     sourceSet
-  });
+  }, String((row.content as string) || (row.excerpt as string) || ''));
   
   return {
     name,
@@ -442,6 +456,12 @@ export async function POST(req: NextRequest) {
   if (!surname) return new Response(JSON.stringify({ ok: false, error: 'surname required' }), { status: 400 });
 
   const candidates: NameCard[] = [];
+  // 多来源均衡与去重复控制
+  const perPoemMax = 1; // 每首诗最多取1个，保证同一来源内来自不同作品
+  const perSourceTarget = Math.max(1, Math.ceil(size / Math.max(1, sources.length)));
+  const sourcePickedCount: Record<string, number> = {};
+  const poemPickedCount: Record<string, number> = {};
+  const pickedNameSet = new Set<string>();
   
   // 严格按用户选择过滤数据源，确保数据源分类的真实性
   for (const source of sources) {
@@ -461,19 +481,34 @@ export async function POST(req: NextRequest) {
     for (const item of shuffledData) {
       const text = item.content || item.excerpt || item.title || '';
       if (!text) continue;
+      // 若该来源已达目标数量，则提前停止该来源
+      if ((sourcePickedCount[source] || 0) >= perSourceTarget) break;
       
       // 从整首诗中提取候选名字，而不是只用开头一句
       const names = extractNames(text, charCount);
       if (names.length > 0) {
         console.log(`从"${item.title}"提取到${names.length}个候选名字:`, names);
-        
-        for (const name of names) {
-          // 生成完整名字：姓氏 + 提取的字
+        // 打散候选，避免固定顺序
+        const shuffledNames = [...names].sort(() => Math.random() - 0.5);
+
+        // 该诗的唯一标识
+        const poemId = `${item.title || ''}__${item.author || ''}__${source}`;
+        poemPickedCount[poemId] = poemPickedCount[poemId] || 0;
+
+        for (const name of shuffledNames) {
+          if ((sourcePickedCount[source] || 0) >= perSourceTarget) break;
+          if (poemPickedCount[poemId] >= perPoemMax) break;
+
           const fullName = `${surname}${name}`;
+          if (pickedNameSet.has(fullName)) continue; // 全局去重
+
           const card = toCard(fullName, item as Record<string, unknown>, source);
-          
           candidates.push(card);
-          
+          pickedNameSet.add(fullName);
+
+          poemPickedCount[poemId] += 1;
+          sourcePickedCount[source] = (sourcePickedCount[source] || 0) + 1;
+
           if (candidates.length >= size * 4) break; // 生成更多候选，增加多样性
         }
       }
@@ -494,7 +529,28 @@ export async function POST(req: NextRequest) {
     }
   }
   
-  const finalCards = Array.from(uniqueCards.values()).slice(0, size);
+  const finalCards: NameCard[] = Array.from(uniqueCards.values()).slice(0, size);
+
+  // 提取一句原文（尽量包含名中的字），仅本地处理不走网络
+  function extractLineFromOriginal(html: string, fullName: string): string {
+    try {
+      const text = (html || '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const sentences = text.split(/[。！？!\?\n]/).map(s => s.trim()).filter(Boolean);
+      const given = fullName.slice(1); // 去掉姓氏
+      const prefer = sentences.find(s => given.split('').some(ch => s.includes(ch)));
+      return prefer || sentences[0] || '';
+    } catch {
+      return '';
+    }
+  }
+
+  // 只提取中文句子；英文由前端懒加载翻译
+  for (const c of finalCards) {
+    c.lineCn = extractLineFromOriginal(c.originalVerse, c.name);
+  }
   
   return Response.json({ 
     ok: true, 

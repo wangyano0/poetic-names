@@ -101,6 +101,30 @@ export interface I18nTexts {
         en: string;
       };
     };
+    yuefu: {
+      zh: string;
+      en: string;
+      desc: {
+        zh: string;
+        en: string;
+      };
+    };
+    gushi: {
+      zh: string;
+      en: string;
+      desc: {
+        zh: string;
+        en: string;
+      };
+    };
+    cifu: {
+      zh: string;
+      en: string;
+      desc: {
+        zh: string;
+        en: string;
+      };
+    };
   };
   
   // 筛选和排序
@@ -248,7 +272,7 @@ export interface I18nTexts {
 
 export const i18nTexts: I18nTexts = {
   pageTitle: {
-    zh: "古诗文起名 · 遇见一个有故事的名字",
+    zh: "让诗意，成为你的名字.",
     en: "Discover a Name with a Beautiful Story"
   },
   subtitle: {
@@ -269,7 +293,7 @@ export const i18nTexts: I18nTexts = {
       en: "Generating..."
     },
     copy: {
-      zh: "复制",
+      zh: "",
       en: "Copy"
     },
     share: {
@@ -334,6 +358,30 @@ export const i18nTexts: I18nTexts = {
       desc: {
         zh: "情感细腻、格律优美，名字温婉、雅致，意象如小桥流水、落花、春水。",
         en: "Known for its delicate emotions and elegant rhythm, inspiring graceful names."
+      }
+    },
+    yuefu: {
+      zh: "乐府",
+      en: "Yuefu",
+      desc: {
+        zh: "源自民歌与乐府诗，质朴真挚，语言生动，贴近日常生活。",
+        en: "Folk-songs and Yuefu style — vivid, sincere and grounded in daily life."
+      }
+    },
+    gushi: {
+      zh: "古诗",
+      en: "Ancient Poetry",
+      desc: {
+        zh: "古典雅致与传统格调并存，意象典雅，文化底蕴深厚。",
+        en: "Classical elegance with deep cultural heritage."
+      }
+    },
+    cifu: {
+      zh: "辞赋",
+      en: "Ci Fu",
+      desc: {
+        zh: "辞采华美，铺陈瑰丽，适合气度不凡、文采斐然的名字。",
+        en: "Resplendent diction and ornate rhetoric, suitable for majestic names."
       }
     }
   },

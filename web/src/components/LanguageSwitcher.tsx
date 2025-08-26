@@ -8,9 +8,9 @@ interface LanguageSwitcherProps {
 
 export default function LanguageSwitcher({ currentLanguage, onLanguageChange }: LanguageSwitcherProps) {
   const languages: { value: Language; label: string; icon: string }[] = [
-    // { value: 'zh', label: '中文', icon: '🇨🇳' },
-    // { value: 'en', label: 'English', icon: '🇺🇸' },
-    // { value: 'bilingual', label: '双语', icon: '🌐' }
+    { value: 'zh', label: '中文', icon: '🇨🇳' },
+    { value: 'en', label: 'English', icon: '🇺🇸' },
+    { value: 'bilingual', label: '双语', icon: '🌐' }
   ];
 
   return (

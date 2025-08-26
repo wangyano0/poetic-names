@@ -151,6 +151,22 @@ export default function PoeticNameHome() {
         <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="1.7" className="text-[#6B513E]">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
+      ),
+      yuefu: (
+        <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="1.7" className="text-[#6B513E]">
+          <path d="M8 7v10a4 4 0 1 0 2-3.465V6h8V4H8z" />
+        </svg>
+      ),
+      gushi: (
+        <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="1.7" className="text-[#6B513E]">
+          <rect x="4" y="5" width="16" height="14" rx="2" />
+          <path d="M8 9h8M8 13h6" />
+        </svg>
+      ),
+      cifu: (
+        <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="1.7" className="text-[#6B513E]">
+          <path d="M5 5h14M7 9h10M9 13h6M11 17h2" />
+        </svg>
       )
     };
     return icons[sourceKey] || icons.shijing;
@@ -231,12 +247,15 @@ export default function PoeticNameHome() {
               </div>
 
               {/* source pills */}
-              <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
                 {[
                   { key: 'shijing', source: 'shijing' },
                   { key: 'chuci', source: 'chuci' },
                   { key: 'tangshi', source: 'tangshi' },
                   { key: 'songci', source: 'songci' },
+                  { key: 'yuefu', source: 'yuefu' },
+                  { key: 'gushi', source: 'gushi' },
+                  { key: 'cifu', source: 'cifu' },
                 ].map((s) => (
                   <li
                     key={s.key}
@@ -333,13 +352,46 @@ export default function PoeticNameHome() {
           {/* 个性化搜索结果区域 - 仅在有搜索结果时显示 */}
           {cards.length > 0 && (
             <div ref={showcaseRef} className="border-t border-neutral-300/60 pt-16">
-              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#4A3728] font-bold text-center">
+              <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#4A3728] font-extrabold text-center">
                 {getText(i18nTexts.results.title, currentLanguage)}
               </h2>
-              <p className="mt-4 text-base text-neutral-600 text-center max-w-2xl mx-auto">
+              <p className="mt-3 text-sm sm:text-base text-neutral-500 text-center max-w-2xl mx-auto">
                 {getText(i18nTexts.results.subtitle, currentLanguage)}「{surname}」{getText(i18nTexts.results.foundCount, currentLanguage)} {filteredAndSortedCards.length} 个名字
               </p>
               
+              {/* 结果区域内的数据来源筛选 */}
+              <div className="mt-6 max-w-6xl mx-auto px-5">
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                  {[
+                    { key: 'shijing', source: 'shijing' },
+                    { key: 'chuci', source: 'chuci' },
+                    { key: 'tangshi', source: 'tangshi' },
+                    { key: 'songci', source: 'songci' },
+                    { key: 'yuefu', source: 'yuefu' },
+                    { key: 'gushi', source: 'gushi' },
+                    { key: 'cifu', source: 'cifu' },
+                  ].map((s) => (
+                    <li
+                      key={s.key}
+                      className={`rounded-2xl border cursor-pointer transition hover:-translate-y-0.5 hover:shadow p-3 text-center shadow-sm ${
+                        sourceMap[s.key] 
+                          ? 'border-[#C79A5A] bg-[#F4E7D6] shadow-md' 
+                          : 'border-neutral-200 bg-white/90'
+                      }`}
+                      onClick={() => handleSourceToggle(s.key)}
+                    >
+                      <div className="flex items-center justify-center gap-2 text-neutral-800">
+                        {getSourceIcon(s.key)}
+                        <div className="leading-tight">
+                          <div className="font-medium">{i18nTexts.sources[s.source as keyof typeof i18nTexts.sources].zh}</div>
+                          <div className="text-[11px] text-neutral-500 italic">{i18nTexts.sources[s.source as keyof typeof i18nTexts.sources].en}</div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
               {/* 数据源使用情况显示 */}
               {/* <div className="mt-4 text-center">
                 <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-2">

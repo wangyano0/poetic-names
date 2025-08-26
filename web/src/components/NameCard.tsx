@@ -1,11 +1,16 @@
 import React from 'react';
 import { Language, i18nTexts, getText } from '@/lib/i18n';
+import chineseToPinyin from 'chinese-to-pinyin';
 
 type NameCardProps = {
   name: string;
+  pinyin: string;
   source: { title: string; author?: string; dynasty?: string; sourceSet: string };
   originalVerse: string;
   meaning: string;
+  lineCn?: string;
+  lineEn?: string;
+  meaningEn?: string;
   createdAt: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
@@ -13,34 +18,31 @@ type NameCardProps = {
 };
 
 export default function NameCard(props: NameCardProps) {
-  const { name, source, originalVerse, meaning, language = 'bilingual' } = props;
+  const { name, pinyin, source, originalVerse, meaning, lineCn, lineEn, meaningEn, language = 'bilingual' } = props;
+  const [lineEnState, setLineEnState] = React.useState<string | undefined>(lineEn);
+  const [meaningEnState, setMeaningEnState] = React.useState<string | undefined>(meaningEn);
 
-  // 生成拼音（简化版）
-  const generatePinyin = (name: string) => {
-    const pinyinMap: Record<string, string> = {
-      '张': 'Zhāng', '王': 'Wáng', '李': 'Lǐ', '赵': 'Zhào', '陈': 'Chén',
-      '刘': 'Liú', '杨': 'Yáng', '黄': 'Huáng', '周': 'Zhōu', '吴': 'Wú',
-      '清': 'Qīng', '扬': 'Yáng', '若': 'Ruò', '溪': 'Xī', '流': 'Liú', '光': 'Guāng',
-      '嘉': 'Jiā', '树': 'Shù', '望': 'Wàng', '舒': 'Shū', '廉': 'Lián', '贞': 'Zhēn',
-      '美': 'Měi', '丽': 'Lì', '秀': 'Xiù', '慧': 'Huì', '智': 'Zhì', '贤': 'Xián',
-      '德': 'Dé', '仁': 'Rén', '义': 'Yì', '礼': 'Lǐ', '信': 'Xìn', '温': 'Wēn',
-      '柔': 'Róu', '婉': 'Wǎn', '约': 'Yuē', '静': 'Jìng', '淑': 'Shū', '娴': 'Xián',
-      '华': 'Huá', '英': 'Yīng', '俊': 'Jùn', '杰': 'Jié', '豪': 'Háo', '雄': 'Xióng',
-      '伟': 'Wěi', '壮': 'Zhuàng', '强': 'Qiáng', '健': 'Jiàn', '康': 'Kāng', '泰': 'Tài',
-      '和': 'Hé', '平': 'Píng', '安': 'Ān', '宁': 'Níng', '逸': 'Yì', '文': 'Wén',
-      '武': 'Wǔ', '才': 'Cái', '艺': 'Yì', '学': 'Xué', '识': 'Shí', '见': 'Jiàn',
-      '闻': 'Wén', '思': 'Sī', '想': 'Xiǎng', '念': 'Niàn', '忆': 'Yì', '怀': 'Huái',
-      '春': 'Chūn', '夏': 'Xià', '秋': 'Qiū', '冬': 'Dōng', '晨': 'Chén', '夕': 'Xī',
-      '朝': 'Zhāo', '暮': 'Mù', '晓': 'Xiǎo', '夜': 'Yè', '昼': 'Zhòu', '星': 'Xīng',
-      '辰': 'Chén', '影': 'Yǐng', '色': 'Sè', '彩': 'Cǎi', '金': 'Jīn',
-      '银': 'Yín', '玉': 'Yù', '珠': 'Zhū', '宝': 'Bǎo', '珍': 'Zhēn', '奇': 'Qí',
-      '妙': 'Miào', '神': 'Shén', '仙': 'Xiān', '灵': 'Líng'
-    };
-    
-    return name.split('').map(char => pinyinMap[char] || char).join(' ');
-  };
-
-  const displayPinyin = generatePinyin(name);
+  const displayPinyin = pinyin;
+  React.useEffect(() => {
+    const key1 = `lineEn:${name}:${source.title}`;
+    const key2 = `meaningEn:${name}:${source.title}`;
+    if (!lineEnState) {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem(key1) : null;
+      if (cached) setLineEnState(cached);
+      else if (lineCn && lineCn.length > 0) {
+        fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: lineCn, target: 'en' }) })
+          .then(r => r.json()).then(d => { if (d?.ok && d.data) { setLineEnState(d.data); localStorage.setItem(key1, d.data); } });
+      }
+    }
+    if (!meaningEnState) {
+      const cached2 = typeof window !== 'undefined' ? localStorage.getItem(key2) : null;
+      if (cached2) setMeaningEnState(cached2);
+      else if (meaning) {
+        fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: meaning, target: 'en' }) })
+          .then(r => r.json()).then(d => { if (d?.ok && d.data) { setMeaningEnState(d.data); localStorage.setItem(key2, d.data); } });
+      }
+    }
+  }, [name, source.title, lineCn, meaning]);
 
   // 来源中文名称映射
   const getSourceName = (sourceSet: string) => {
@@ -109,8 +111,13 @@ export default function NameCard(props: NameCardProps) {
       tags.push({ text: '双字名', color: '#fef3c7', textColor: '#d97706' });
     }
     
-    // 来源标签
-    tags.push({ text: getSourceName(source.sourceSet), color: '#f0f9ff', textColor: '#0369a1' });
+    // 来源标签（中英文）
+    tags.push({ 
+      text: getSourceName(source.sourceSet), 
+      color: '#f0f9ff', 
+      textColor: '#0369a1',
+      subText: getSourceNameEn(source.sourceSet)
+    });
     
     return tags;
   };
@@ -129,7 +136,7 @@ export default function NameCard(props: NameCardProps) {
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}
     >
-      {/* 名字和拼音 - 新布局 */}
+      {/* 名字和拼音 - 新布局（弱化拼音） */}
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <div style={{ 
           fontSize: '42px', 
@@ -141,24 +148,24 @@ export default function NameCard(props: NameCardProps) {
           {name}
         </div>
         <div style={{ 
-          fontSize: '18px', 
-          color: '#6b7280', 
-          fontWeight: '500',
+          fontSize: '16px', 
+          color: '#9ca3af', 
+          fontWeight: 500,
           fontStyle: 'italic',
           marginBottom: '8px'
         }}>
           {displayPinyin}
         </div>
         <div style={{ 
-          fontSize: '14px', 
-          color: '#9ca3af',
-          fontWeight: '400'
+          fontSize: '12px', 
+          color: '#cbd5e1',
+          fontWeight: 400
         }}>
           &ldquo;{displayPinyin}&rdquo;拼音
         </div>
       </div>
 
-      {/* 标签系统 */}
+      {/* 标签系统 - 圆角 pill */}
       <div style={{ 
         display: 'flex', 
         flexWrap: 'wrap', 
@@ -170,43 +177,64 @@ export default function NameCard(props: NameCardProps) {
           <span
             key={index}
             style={{
-              padding: '4px 12px',
+              padding: '6px 14px',
               backgroundColor: tag.color,
               color: tag.textColor,
-              borderRadius: '12px',
+              borderRadius: '9999px',
               fontSize: '12px',
-              fontWeight: '600',
-              border: '1px solid rgba(0,0,0,0.1)'
+              fontWeight: 600,
+              border: '1px solid rgba(0,0,0,0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px'
             }}
           >
-            {tag.text}
+            <span>{tag.text}</span>
+            {tag.subText && (
+              <span style={{ fontSize: '10px', opacity: 0.8 }}>
+                {tag.subText}
+              </span>
+            )}
           </span>
         ))}
       </div>
 
-      {/* 寓意和出处 - 合并显示 */}
+      {/* 出处 + 诗句高亮 + 解释分离 */}
       <div style={{ 
         marginBottom: '20px',
         padding: '16px',
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#ffffff',
         borderRadius: '12px',
-        border: '1px solid #e2e8f0'
+        border: '1px solid #e5e7eb'
       }}>
         <div style={{ 
           fontSize: '16px', 
           color: '#1f2937',
           lineHeight: '1.5',
-          fontWeight: '500',
+          fontWeight: 600,
           marginBottom: '8px'
         }}>
           《{source.title}》，{source.author || '佚名'}，{source.dynasty || '未知朝代'}
         </div>
-        <div style={{ 
-          fontSize: '14px', 
-          color: '#6b7280',
-          lineHeight: '1.4'
-        }}>
+        {lineCn && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+            <div style={{ borderLeft: '3px solid #E5E7EB', paddingLeft: '12px', maxWidth: '92%', color: '#374151' }}>
+              <div style={{ fontSize: '15px', lineHeight: '1.6' }}>「{lineCn}」</div>
+              <div style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic', marginTop: '6px' }}>
+                {chineseToPinyin(lineCn, { removeTone: false, removeSpace: false, keepRest: true })}
+              </div>
+              <div style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', marginTop: '6px' }}>
+                {lineEnState ? `${lineEnState}` : <span style={{ display: 'inline-block', height: '12px', width: '75%', background: '#e5e7eb', borderRadius: '4px' }} />}
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }}>
           {meaning}
+          <div style={{ marginTop: '6px', color: '#94a3b8', fontStyle: 'italic' }}>
+            {meaningEnState ? meaningEnState : <span style={{ display: 'inline-block', height: '12px', width: '80%', background: '#e5e7eb', borderRadius: '4px' }} />}
+          </div>
         </div>
       </div>
 
